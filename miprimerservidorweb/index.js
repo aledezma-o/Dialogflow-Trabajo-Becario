@@ -1,13 +1,31 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-admin.initializeApp();
+//admin.initializeApp();
 const express = require('express');
 const app = express();
 const { WebhookClient } = require('dialogflow-fulfillment');
 const { Card, Suggestion } = require('dialogflow-fulfillment');
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
+///////
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCez0P1iJkZ8O3TgaLN1nbVZmnXhgO5AQ0",
+  authDomain: "dialogflowtestmessenger-muwf.firebaseapp.com",
+  projectId: "dialogflowtestmessenger-muwf",
+  storageBucket: "dialogflowtestmessenger-muwf.appspot.com",
+  messagingSenderId: "402005588569",
+  appId: "1:402005588569:web:0a078a55c7c0c7513e4f48",
+  measurementId: "G-HKCYF2PBXR"
+};
+
+admin.initializeApp(firebaseConfig);
+
+// Initialize Firebase (appfb)
+//const appfb = initializeApp(firebaseConfig);
+//const analytics = getAnalytics(appfb);
+
+///////
 exports.chatbot = functions.https.onRequest((request, response) => {
     console.log("req***********: ", request.body);
     const agent = new WebhookClient({ request, response });
@@ -56,6 +74,7 @@ exports.makeUppercase = functions.firestore.document('/messages/{documentId}')
         return snap.ref.set({ uppercase }, { merge: true });
     });
 
+// iniciar servidor web
 app.use(express.static(__dirname + "/public"));
 app.listen('3000', function () {
     console.log("servidor web iniciado, escuchando en puerto 3000. http://localhost:3000/");
