@@ -1,12 +1,13 @@
 'use strict';
-const axios = require('axios'); // axios para hacer consultas
+const axios = require('axios'); // axios para hacer consultas a servicios
 
 const functions = require('firebase-functions'); // libreria de funciones de firebase
-const {WebhookClient, Payload} = require('dialogflow-fulfillment'); // webhook para los fulfillments
+const {WebhookClient, Payload} = require('dialogflow-fulfillment'); // webhook para los fulfillments de funciones en intents
 const {Card, Suggestion} = require('dialogflow-fulfillment');
 // The Firebase Admin SDK to access Firestore.
 const admin = require('firebase-admin'); // necesitamos el admin de firebase
 const { Message } = require('firebase-functions/v1/pubsub');
+// proporcionamos el url publico de firebase
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),
     databaseURL: "https://dialogflowtestmessenger-muwf-default-rtdb.firebaseio.com/"
@@ -19,7 +20,7 @@ exports.chatbot = functions.https.onRequest((request, response) => {
     console.log("Dialogflow Request headers: " + JSON.stringify(request.headers));
     console.log("Dialogflow Request body: " + JSON.stringify(request.body));
 
-    // function Welcome(agent) { // ejemplo para sacar datos de la table Estudiantes
+    // function Welcome(agent) { // ejemplo para sacar datos de la table Estudiantes de firebase
     //     const estudiante = db.collection("Estudiantes");
     //     const idEstudiante = "kw6A8oA3tQOtlAx8XKpx"; // id del estudiante
     //     //
@@ -36,6 +37,7 @@ exports.chatbot = functions.https.onRequest((request, response) => {
     //     //agent.add(`Welcome to my agent!`);
     // }
 
+    // funcion para el intent de Saludo (con el que se inicia)
     function Welcome(agent) { 
         agent.add(`Hola! ¿Cómo puedo ayudarle?`);
         const payload = {
@@ -61,20 +63,23 @@ exports.chatbot = functions.https.onRequest((request, response) => {
                 ],
             ],
         };
-
+        // Para enviar respuestas enriquecidas (chips, listas, imagenes, acordion)
         agent.add(
             new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true,})
         );
     }
 
+    // funcion por si no entiende los inputs
     function fallback(agent) {
         agent.add(`I didn't understand`);
         agent.add(`I'm sorry, can you try again?`);
     }
 
     function horarioAcordeon(agent){
-        agent.add("Su horario:");
-        // foreach cantidadHorario in horario: // creamos un acordeon para cada materia
+        const codigoAlumno = agent.parameters.number; // sacamos el codigo del estudiante
+        agent.add("Horario del estudiante con codigo " + codigoAlumno + ":");
+        // ejemplo hardcodeado para las materias
+        // haciendo un servicio podriamos repetir el envio de payload por cada materia asignada del estudiante (linea 112)
         const payload = {
             richContent: [
               [
@@ -112,24 +117,24 @@ exports.chatbot = functions.https.onRequest((request, response) => {
           return payload;
     }
 
+    // ejemplo de las rimas para consultar un servicio
     function rhymingWordHandler(agent){
-        const word = agent.parameters.any;
+        const word = agent.parameters.any; // en Actions en Parameters del dialogflow, el nombre del parametro es "any"
         agent.add(`Este es el agente de rimas!`);
         console.log("Este es el agente de rimas!");
-        agent.add(`Las palabras que riman con  "${word} " son:`);
-        return axios.get(`https://api.datamuse.com/words?rel_rhy=${word}`)
+        agent.add(`Las palabras que riman con  ${word}  son:`);
+        return axios.get(`https://api.datamuse.com/words?rel_rhy=${word}`) // servicio consultado (devuelve rimas con la palabra "${word}")
         .then((result) => {
             result.data.map(wordObj => {
-                agent.add(wordObj.word); // en Actions en Parameters
-                //agent.add(wordObj.numSyllables);
+                agent.add(wordObj.word); 
+                //agent.add(wordObj.numSyllables); 
             });
         });
       }
 
-      function pet(agent){
+      function pet(agent){ // este intent ejemplo se llama escribiendole 'mypet' al bot
         agent.add(`which one u want`);
         const payload = {
-         
           richContent:[
             [
               {
@@ -156,8 +161,65 @@ exports.chatbot = functions.https.onRequest((request, response) => {
         agent.add(new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true}));
         return payload;
       }
-    //////////////////////////////////////////////
+    
+    function turnitinConsulta(agent){
+        agent.add("Aqui hay algunos videos que te pueden ayudar:");
+        const payload = {
+            richContent: [
+                [
+                    {
+                        type: "chips",
+                        options: [
+                            {
+                                text: "Subir documento a Turnitin:",
+                                link: "https://youtu.be/vHAIuj1Sog4?t=70"
+                            }
+                        ]
+                    }
+                ]
+            ]
+        };
+        // 
+        agent.add(
+            new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true})
+          ); 
+    }
+    function tareaConsulta(agent){
+        agent.add("Aqui hay algunos videos que te pueden ayudar:");
+        const payload = {
+            richContent: [
+                [
+                    {
+                        type: "chips",
+                        options: [
+                            {
+                                text: "Subir tarea:",
+                                link: "https://youtu.be/Xi5fJYEtCV8?t=35"
+                            },
+                            {
+                                text: "Subir tarea 2:",
+                                link: "https://youtu.be/iQ1Nr-Wwcjc?t=9"
+                            }
+                        ]
+                    }
+                ]
+            ]
+        };
+        // 
+        agent.add(
+            new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true})
+          ); 
+    }
 
+    // function ingresoConsulta(agent){
+
+    //     agent.add(
+    //         new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true})
+    //       ); 
+    // }
+
+    //////////////////////////////////////////////
+    // parte para settear y enviar las funciones a los intents en dialog flow
     let intentMap = new Map();
     intentMap.set("Saludo", Welcome); // como el default welcome intent, en el nuestro lo cambiamos a: Saludo
     intentMap.set("Default Fallback Intent", fallback);
@@ -167,6 +229,8 @@ exports.chatbot = functions.https.onRequest((request, response) => {
 
     // horarios
     intentMap.set("HorariosMateriasCodigo", horarioAcordeon);
+    intentMap.set("consultaSubirTarea", tareaConsulta); // consulta tarea
+    intentMap.set("consultaSubirTurnitin", turnitinConsulta); // consulta turnitin
 
     // ejemplo internet de como usar RICH RESPONSES en .js
     intentMap.set('mypet',pet);
@@ -182,34 +246,3 @@ exports.chatbot = functions.https.onRequest((request, response) => {
 //   functions.logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
 // });
-
-// ejemplo lista
-// {
-//     "richContent": [
-//       [
-//         {
-//           "type": "list",
-//           "subtitle": "Horario A: 7:45 - 9:45",
-//           "event": {
-//             "name": "",
-//             "languageCode": "",
-//             "parameters": {}
-//           },
-//           "title": "Calculo I"
-//         },
-//         {
-//           "type": "divider"
-//         },
-//         {
-//           "event": {
-//             "languageCode": "",
-//             "parameters": {},
-//             "name": ""
-//           },
-//           "subtitle": "Horario C: 12:15 - 14:15",
-//           "title": "Programacion I",
-//           "type": "list"
-//         }
-//       ]
-//     ]
-//   }

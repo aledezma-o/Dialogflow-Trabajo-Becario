@@ -3,8 +3,6 @@ const admin = require('firebase-admin');
 //admin.initializeApp();
 const express = require('express');
 const app = express();
-const { WebhookClient } = require('dialogflow-fulfillment');
-const { Card, Suggestion } = require('dialogflow-fulfillment');
 
 process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
 admin.initializeApp();
