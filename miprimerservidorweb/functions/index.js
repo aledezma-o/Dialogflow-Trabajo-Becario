@@ -2,7 +2,7 @@
 const axios = require('axios'); // axios para hacer consultas
 
 const functions = require('firebase-functions'); // libreria de funciones de firebase
-const {WebhookClient} = require('dialogflow-fulfillment'); // webhook para los fulfillments
+const {WebhookClient, Payload} = require('dialogflow-fulfillment'); // webhook para los fulfillments
 const {Card, Suggestion} = require('dialogflow-fulfillment');
 // The Firebase Admin SDK to access Firestore.
 const admin = require('firebase-admin'); // necesitamos el admin de firebase
@@ -38,6 +38,33 @@ exports.chatbot = functions.https.onRequest((request, response) => {
 
     function Welcome(agent) { 
         agent.add(`Hola! ¿Cómo puedo ayudarle?`);
+        const payload = {
+            richContent: [
+                [
+                    {
+                        type: "chips",
+                        options: [
+                            {
+                                text: "Dog",
+                                link: "https://en.wikipedia.org/wiki/Dog",
+                            },
+                            {
+                                text: "Cat",
+                                link: "https://en.wikipedia.org/wiki/Cat",
+                            },
+                            {
+                                text: "Rabbit",
+                                link: "https://en.wikipedia.org/wiki/Rabbit",
+                            },
+                        ],
+                    },
+                ],
+            ],
+        };
+
+        agent.add(
+            new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true,})
+        );
     }
 
     function fallback(agent) {
@@ -49,21 +76,40 @@ exports.chatbot = functions.https.onRequest((request, response) => {
         agent.add("Su horario:");
         // foreach cantidadHorario in horario: // creamos un acordeon para cada materia
         const payload = {
-            "richContent": [
+            richContent: [
               [
                 {
-                  "type": "accordion",
-                  "title": "Matematicas para Ingenieria I",
-                  "subtitle": "B: 10:00 - 12:00",
-                  "text": "Docente: A, Aula: A-5"
+                  subtitle: "B: 10:00 - 12:00",
+                  title: "Matematicas para Ingenieria I",
+                  text: "Docente: A <br>Aula: A-5 <br>Fecha Inicio: 14/05 <br>Fecha Fin: 14/06",
+                  type: "accordion"
+                },
+                {
+                  text: "Docente: B <br>Aula: Laboratorios A-17 <br>Fecha Inicio: 14/05 <br>Fecha Fin: 14/06",
+                  subtitle: "C: 12:15 - 14:15",
+                  title: "Programacion I",
+                  type: "accordion"
+                },
+                {
+                  text: "Docente: C <br>Aula: A-1 <br>Fecha Inicio: 15/06 <br>Fecha Fin: 15/07",
+                  type: "accordion",
+                  subtitle: "C: 12:15 - 14:15",
+                  title: "Algebra Lineal"
+                },
+                {
+                  type: "accordion",
+                  title: "Arquitectura de Computadoras",
+                  text: "Docente: D <br>Aula: Laboratorios A-17 <br>Fecha Inicio: 15/06 <br>Fecha Fin: 15/07",
+                  subtitle: "B: 10:00 - 12:00"
                 }
               ]
             ]
           };
           agent.add(
-            new Payload(agent.UNSPECIFIED, payload, {rawPayload: false, sendAsMessage: true})
+            new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true})
           );  
           //agent.add(horarioAcord);
+          return payload;
     }
 
     function rhymingWordHandler(agent){
@@ -84,22 +130,22 @@ exports.chatbot = functions.https.onRequest((request, response) => {
         agent.add(`which one u want`);
         const payload = {
          
-          "richContent":[
+          richContent:[
             [
               {
-                "type":"chips",
-                "options":[
+                type:"chips",
+                options:[
                   {
-                    "text":"Dog",
-                    "link" : "https://en.wikipedia.org/wiki/Dog"
+                    text:"Dog",
+                    link : "https://en.wikipedia.org/wiki/Dog"
                   },
                   {
-                    "text":"Cat",
-                    "link":"https://en.wikipedia.org/wiki/Cat"
+                    text:"Cat",
+                    link:"https://en.wikipedia.org/wiki/Cat"
                   },
                   {
-                  "text":"Rabbit",
-                  "link" : "https://en.wikipedia.org/wiki/Rabbit"
+                  text:"Rabbit",
+                  link : "https://en.wikipedia.org/wiki/Rabbit"
                   }
                 ]
               }
@@ -108,6 +154,7 @@ exports.chatbot = functions.https.onRequest((request, response) => {
          
         };
         agent.add(new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true}));
+        return payload;
       }
     //////////////////////////////////////////////
 
