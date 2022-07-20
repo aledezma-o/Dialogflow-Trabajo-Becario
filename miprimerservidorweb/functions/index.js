@@ -7,6 +7,7 @@ const {Card, Suggestion} = require('dialogflow-fulfillment');
 // The Firebase Admin SDK to access Firestore.
 const admin = require('firebase-admin'); // necesitamos el admin de firebase
 const { Message } = require('firebase-functions/v1/pubsub');
+const { json } = require('express');
 // proporcionamos el url publico de firebase
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),
@@ -78,43 +79,73 @@ exports.chatbot = functions.https.onRequest((request, response) => {
     function horarioAcordeon(agent){
         const codigoAlumno = agent.parameters.number; // sacamos el codigo del estudiante
         agent.add("Horario del estudiante con codigo " + codigoAlumno + ":");
+        console.log("estamos dentro del intent HorariosMateriasCodigo");
+        return axios.get(`https://campusvirtual.upb.edu/oficinas-virtuales/get_horario.php?codigo=${codigoAlumno}`)
+        //return axios.get("https://campusvirtual.upb.edu/oficinas-virtuales/get_horario.php?codigo=456456")
+        .then((result) => { //"Docente: " + horarioObj.materias.Docente + "<br>Aula: A-5 <br>Fecha Inicio: "+ horarioObj.materias.Fecha_inicio +"<br>Fecha Fin: " + ,
+            result.data.materias.foreach(mat => {
+                console.log(mat.nombre);
+            });
+            // result.data.map(m1 => {
+                
+
+            //     console.log("consultamos horario")
+            //     const payload = {
+            //         richContent: [
+            //           [
+            //             {
+            //               subtitle: horarioObj.materias.map(materia => materia.Horario),
+            //               title: horarioObj.materias.map(materia => materia.nombre),
+            //               text: horarioObj.materias.map(materia => materia.Docente),
+            //               type: "accordion"
+            //             }
+            //           ]
+            //         ]
+            //       };
+            //     agent.add(
+            //         new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true})
+            //     );  
+                //agent.add(horarioObj.word); 
+                //agent.add(wordObj.numSyllables); 
+            //}); 
+        });
+        // codigo: 456456
+
         // ejemplo hardcodeado para las materias
-        // haciendo un servicio podriamos repetir el envio de payload por cada materia asignada del estudiante (linea 112)
-        const payload = {
-            richContent: [
-              [
-                {
-                  subtitle: "B: 10:00 - 12:00",
-                  title: "Matematicas para Ingenieria I",
-                  text: "Docente: A <br>Aula: A-5 <br>Fecha Inicio: 14/05 <br>Fecha Fin: 14/06",
-                  type: "accordion"
-                },
-                {
-                  text: "Docente: B <br>Aula: Laboratorios A-17 <br>Fecha Inicio: 14/05 <br>Fecha Fin: 14/06",
-                  subtitle: "C: 12:15 - 14:15",
-                  title: "Programacion I",
-                  type: "accordion"
-                },
-                {
-                  text: "Docente: C <br>Aula: A-1 <br>Fecha Inicio: 15/06 <br>Fecha Fin: 15/07",
-                  type: "accordion",
-                  subtitle: "C: 12:15 - 14:15",
-                  title: "Algebra Lineal"
-                },
-                {
-                  type: "accordion",
-                  title: "Arquitectura de Computadoras",
-                  text: "Docente: D <br>Aula: Laboratorios A-17 <br>Fecha Inicio: 15/06 <br>Fecha Fin: 15/07",
-                  subtitle: "B: 10:00 - 12:00"
-                }
-              ]
-            ]
-          };
-          agent.add(
-            new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true})
-          );  
-          //agent.add(horarioAcord);
-          return payload;
+        
+        // const payload = {
+        //     richContent: [
+        //       [
+        //         {
+        //           subtitle: "B: 10:00 - 12:00",
+        //           title: "Matematicas para Ingenieria I",
+        //           text: "Docente: A <br>Aula: A-5 <br>Fecha Inicio: 14/05 <br>Fecha Fin: 14/06",
+        //           type: "accordion"
+        //         },
+        //         {
+        //           text: "Docente: B <br>Aula: Laboratorios A-17 <br>Fecha Inicio: 14/05 <br>Fecha Fin: 14/06",
+        //           subtitle: "C: 12:15 - 14:15",
+        //           title: "Programacion I",
+        //           type: "accordion"
+        //         },
+        //         {
+        //           text: "Docente: C <br>Aula: A-1 <br>Fecha Inicio: 15/06 <br>Fecha Fin: 15/07",
+        //           type: "accordion",
+        //           subtitle: "C: 12:15 - 14:15",
+        //           title: "Algebra Lineal"
+        //         },
+        //         {
+        //           type: "accordion",
+        //           title: "Arquitectura de Computadoras",
+        //           text: "Docente: D <br>Aula: Laboratorios A-17 <br>Fecha Inicio: 15/06 <br>Fecha Fin: 15/07",
+        //           subtitle: "B: 10:00 - 12:00"
+        //         }
+        //       ]
+        //     ]
+        //   };
+        //   agent.add(
+        //     new Payload(agent.UNSPECIFIED, payload, {rawPayload: true, sendAsMessage: true})
+        //   );  
     }
 
     // ejemplo de las rimas para consultar un servicio
@@ -124,10 +155,12 @@ exports.chatbot = functions.https.onRequest((request, response) => {
         console.log("Este es el agente de rimas!");
         agent.add(`Las palabras que riman con  ${word}  son:`);
         return axios.get(`https://api.datamuse.com/words?rel_rhy=${word}`) // servicio consultado (devuelve rimas con la palabra "${word}")
+        //return axios.get("https://api.datamuse.com/words?rel_rhy=pet")
         .then((result) => {
             result.data.map(wordObj => {
-                agent.add(wordObj.word); 
-                //agent.add(wordObj.numSyllables); 
+                //agent.add(`${wordObj.word}, score ${wordObj.score}`); 
+                //agent.add("p: "+wordObj.word + ", score: "+wordObj.score); 
+                agent.add(wordObj.word + ", score: " + wordObj.score);
             });
         });
       }

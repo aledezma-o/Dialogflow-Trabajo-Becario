@@ -12,7 +12,7 @@ window.addEventListener('dfMessengerLoaded', function(event){
     // ejemplo de eventos en dialogflowMessenger
     dfMessenger.addEventListener('df-user-input-entered', function (event) {
         if (Number.isInteger(parseInt(event.detail.input)))
-            if(parseInt(event.detail.input) > 10000 && parseInt(event.detail.input) < 300000)
+            if(parseInt(event.detail.input) > 10000 && parseInt(event.detail.input) < 600000)
                 console.log("se ingreso un codigo de estudiante");
                 //dfMessenger.renderCustomText('Su codigo es: ' + event.detail.input + " y sus materias son: ");
     });
